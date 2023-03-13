@@ -1,0 +1,53 @@
+---
+- name: Install, start, and enable Apache web server
+  hosts: webservers
+  become: yes
+
+  tasks:
+  - name: Update target servers
+    yum:
+      name: '*'
+      state: latest
+    when: ansible_distribution == 'CentOS' and ansible_distribution_major_version == '7'
+
+  - name: Install Apache
+    yum:
+      name: httpd
+      state: present
+
+  - name: Start Apache
+    service:
+      name: httpd
+      state: started
+
+  - name: Enable Apache at boot time
+    service:
+      name: httpd
+      enabled: yes
+
+  - name: Install Git
+    yum:
+      name: git
+      state: present
+
+  - name: Clone git repository
+    git:
+      repo: https://github.com/Sensini7/Host-a-Secure-Static-Website-On-S3-Bucket-With-Cloudfront-And-Route53.git
+      dest: /tmp/staticwebsite
+      
+
+  - name: Copy static website 
+    copy:
+      src: /tmp/staticwebsite/index.html
+      dest: /var/www/html/index.html
+      remote_src: yes 
+
+  - name: Delete cloned repository
+    file:
+      path: /tmp/staticwebsite
+      state: absent
+
+  - name: Restart Apache
+    service:
+      name: httpd
+      state: restarted
