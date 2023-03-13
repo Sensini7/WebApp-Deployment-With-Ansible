@@ -163,7 +163,145 @@ sudo yum install nano -y
 
 ## Creating Private SSH Keypair
 - Login to the master node as ansible user if not already logged in.
-- 
+- To generate new keypair, use this command **`ssh-keygen -t rsa`**. save the key in the path /home/ansible/.ssh/id_rsa
+- Leave paraphrase empty by hitting enter
+- Your screen should look like this when key is generated 
+
+![privsshkeypair](https://user-images.githubusercontent.com/99888333/224834200-e31921d6-f825-4ca4-8aba-bf6eb0d35bd0.png)
+
+1. Before copying the new keypair to hostnodes, we have to setup proper rights on .ssh folder for ansible user to copy it. Use the following command to do so **`sudo chmod 700 /home/ansible/.ssh`**
+2. Copy the ssh public key to Node1. **`ssh-copy-id ansible@Private-IP Of Node1`**
+- Your screen should look like this with a success
+
+![copykey](https://user-images.githubusercontent.com/99888333/224839977-9a5c27a7-5ce5-428d-a79c-161a3ff6efe6.png)
+
+3. Repeat step 2 for node2 aswell.
+4. Test the ssh connection from master node to node1 and node2 respectively. `ssh ansible@Private-IP Of hostnode`. You should not get a password prompt prior to connection this time as seen in the node1 example below.
+
+![testssh](https://user-images.githubusercontent.com/99888333/224839682-856ee753-3685-43f4-b465-606d0fde465c.png)
+
+**Next we have to add the private IP addresses of our hostnodes as a group of webservers to the inventory file or hosts file of ansible found in the master node. This is how ansible knows where to execute playbooks**
+
+## Configuring Inventory
+- Move to the aansible master as ansible user.
+- navigate to the directory `/etc/ansible`
+- `ls` to list the files.
+- `sudo nano hosts` to edit the hosts file
+- Uncomment the `webservers` group and copy paste the private IPs of your `Node1 and Node2` respectively as shown below
+
+![hosts](https://user-images.githubusercontent.com/99888333/224843312-a88cee5b-7b4e-4d6a-ab48-b66f7c4f3b9f.png)
+
+- save and exit the hosts file `ctr+x,y enter`
+- Test the connection of ansible to webservers group of host nodes using the ping command **`ansible webservers -m ping`**
+- Your screen should look like this for a success.
+
+![ping](https://user-images.githubusercontent.com/99888333/224845162-a7cc1c6c-153b-4aae-babf-360542638dd7.png)
+
+
+## Create And Run The Ansible Playbook
+- We are going to create the playbook in the `/etc/ansible` directory
+- Once in the ansible directory, create an empty file which will contain the playbook with this command **`sudo nano webservers-playbook.yml`**
+- Paste the following playbook in the file. THis playbook is also found in the scripts file of this repo.
+
+```bash
+---
+- name: Install, start, and enable Apache web server
+  hosts: webservers
+  become: yes
+
+  tasks:
+  - name: Update target servers
+    yum:
+      name: '*'
+      state: latest
+    when: ansible_distribution == 'CentOS' and ansible_distribution_major_version == '7'
+
+  - name: Install Apache
+    yum:
+      name: httpd
+      state: present
+
+  - name: Start Apache
+    service:
+      name: httpd
+      state: started
+
+  - name: Enable Apache at boot time
+    service:
+      name: httpd
+      enabled: yes
+
+  - name: Install Git
+    yum:
+      name: git
+      state: present
+
+  - name: Clone git repository
+    git:
+      repo: https://github.com/Sensini7/Host-a-Secure-Static-Website-On-S3-Bucket-With-Cloudfront-And-Route53.git
+      dest: /tmp/staticwebsite
+      
+
+  - name: Copy static website 
+    copy:
+      src: /tmp/staticwebsite/index.html
+      dest: /var/www/html/index.html
+      remote_src: yes 
+
+  - name: Delete cloned repository
+    file:
+      path: /tmp/staticwebsite
+      state: absent
+
+  - name: Restart Apache
+    service:
+      name: httpd
+      state: restarted
+
+```
+- save and exit the file
+- The playbook does the following:
+- Goes to all servers in the hosts group `webservers`
+- updates all the servers
+- installs apache on all target servers to serve the webapp
+- starts apache on these servers
+- enables apache at boot time
+- installs git
+- clones the github repo containing the webapp into a temporal directory in a folder named `staticwebsite`
+- Copies the webapp from the temporal directory into the html directory of apache which serves the webapp. **`PS: WE used the copy module in this section of the playbook. Just by using the copy module, the content has to be found on the ansible controller which is why we bootstraped the ansible master with a script that copies the website to the ansible master. with a remote source set to yes, this tells ansible to copy the webapp from the controller node to the host nodes.`**
+- The next task deletes the cloned repository on all target nodes
+- And finally restarts apache
+
+
+- Run the playbook with the following command `ansible-playbook webservers-playbook.yml`
+- With a success, you should get the following output
+
+![final playbook output](https://user-images.githubusercontent.com/99888333/224849638-2cd05e2a-e7d0-495e-a564-2663df264496.png)
+
+**Navigate to the EC2 console, copy the Public IPs of Node1 and Node2 and paste in the browser to view the newly deployed webapp on hostnodes.**
+
+![success](https://user-images.githubusercontent.com/99888333/224850678-3d7db057-0092-4e74-a401-7ad3db7b084e.png)
+
+**Congratulations you have successfully deployed a webapp to multiple webservers using ansible**
+
+**To cleanup, shut down all 3 instances**
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
