@@ -127,7 +127,7 @@ sudo yum install nano -y
 
 ```
 
-**The script above does the same tasks on the host nodes as the later does on the master nodes except the following**
+**The script above does the same tasks on the host nodes as the later does on the master node except the following**
 
 - it does not install git
 - does not update th host nodes nor install apache
