@@ -98,7 +98,7 @@ The last 5 lines of code ensures that our webapp is present in the master node. 
 
 ## Setting Up WebApp Host Nodes
 - Create a second security group named **`Hostnode-SG`**. Open `HTTP port 80` to everywhere and `SSH Port 22` to the **`security group of the masternode`**
-- Launch two t2.micro CentOs servers with this `SG` and use the following script as user data for these servers
+- Launch two t2.micro CentOs servers named `Node1` and `Node2` with this `SG` and use the following script as user data for these servers
 
 ```bash
 #!/bin/bash
@@ -137,3 +137,36 @@ sudo yum install nano -y
 **The above tasks will be done by ansible on the host nodes.**
 
 `once the above servers (master and hosts) are up and running, we have successfully set up the base environment necessary to configure and deploy the webapp at scale with ansible.`
+
+## Changing Hostnames
+
+1. Open three CLI terminals and login to each of the servers as the ansible user on each terminal. i.e, one terminal for the master node,one for Node1 and the last for   Node2 
+2. use the following command to login. **`ssh ansible@public-IP`**. Replace public-ip with the corresponding public IP of each server in each case.
+3. On the master node, use the command **`sudo nano /etc/hostname`** to edit its hostname. When the nano editor opens the hostname file, change its hostname to `ansible-master` hit **ctrl+x,yand enter** to save and exit the nano editor
+4. Reboot the server with the `sudo reboot1 command to pickup the new changes.
+5. Re-SSH into the master node to view the new hostname.
+6. Repeat steps `3,4 and 5`  on nodes 1 and 2 changing their hostnames to Node1 And Node2 respectively.
+
+**master node hostname**
+
+![masterhostname](https://user-images.githubusercontent.com/99888333/224829953-2bc7181f-0e77-435e-bdc6-40fa996e29ff.png)
+
+**Node1 hostname**
+
+![node1hostname](https://user-images.githubusercontent.com/99888333/224831252-18c6b076-58e5-418a-a81e-2665215ceb66.png)
+
+**Node2 hostname**
+
+![Node2](https://user-images.githubusercontent.com/99888333/224830948-a97a69d9-c580-43f0-96ba-ec79c7a2c6b2.png)
+
+**The environment is well set up for ansible master node to ssh into host nodes with all servers having distinct hostnames but the ansible user of the master node  is still prompt to provide the password of hostnodes each time it tries to ssh. This is a massive problem as we wont be available to provide passwords during automation when playbooks run. Tos solve this, we create a private SSH keypair in the master node and copy or share it with the respective hostnodes.**
+
+## Creating Private SSH Keypair
+- Login to the master node as ansible user if not already logged in.
+- 
+
+
+
+
+
+
