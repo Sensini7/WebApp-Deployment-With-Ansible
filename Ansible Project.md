@@ -161,7 +161,7 @@ sudo yum install nano -y
 
 **The environment is well set up for ansible master node to ssh into host nodes with all servers having distinct hostnames but the ansible user of the master node  is still prompt to provide the password of hostnodes each time it tries to ssh. This is a massive problem as we wont be available to provide passwords during automation when playbooks run. Tos solve this, we create a private SSH keypair in the master node and copy or share it with the respective hostnodes.**
 
-## Creating Private SSH Keypair
+## Creating Internal SSH Keypair
 - Login to the master node as ansible user if not already logged in.
 - To generate new keypair, use this command **`ssh-keygen -t rsa`**. save the key in the path /home/ansible/.ssh/id_rsa
 - Leave paraphrase empty by hitting enter
