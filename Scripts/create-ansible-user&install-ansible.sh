@@ -33,24 +33,3 @@ sudo yum install ansible -y
 
 #Install nano editor
 sudo yum install nano -y
-
-#Install apache
-yum update -y
-yum install -y httpd.x86_64
-systemctl start httpd.service
-systemctl enable httpd.service
-
-# Install git if not already installed
-sudo yum install git -y
-
-# Clone the GitHub repository containing your website.
-git clone https://github.com/Sensini7/Host-a-Secure-Static-Website-On-S3-Bucket-With-Cloudfront-And-Route53.git /tmp/staticwebsite
-
-# Copy the HTML website to the /var/www/html directory
-sudo cp /tmp/staticwebsite/index.html /var/www/html/index.html
-
-# Remove the temporary directory
-rm -rf /tmp/staticwebsite
-
-# Restart Apache web server
-sudo service httpd restart
