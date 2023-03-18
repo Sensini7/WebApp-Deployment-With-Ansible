@@ -54,26 +54,6 @@ sudo yum install ansible -y
 #Install nano editor
 sudo yum install nano -y
 
-#Install apache
-yum update -y
-yum install -y httpd.x86_64
-systemctl start httpd.service
-systemctl enable httpd.service
-
-# Install git if not already installed
-sudo yum install git -y
-
-# Clone the GitHub repository containing your website.
-git clone https://github.com/Sensini7/Host-a-Secure-Static-Website-On-S3-Bucket-With-Cloudfront-And-Route53.git /tmp/staticwebsite
-
-# Copy the HTML website to the /var/www/html directory
-sudo cp /tmp/staticwebsite/index.html /var/www/html/index.html
-
-# Remove the temporary directory
-rm -rf /tmp/staticwebsite
-
-# Restart Apache web server
-sudo service httpd restart
 
 ```
 
@@ -87,14 +67,7 @@ sudo service httpd restart
 - Installs epel-release ansible package
 - Installs **`ansible`**
 - Installs **nano editor** for centos.
-- Updates the servers softwares, **`installs,starts and enable apache`**
-- Installs git 
-- Clones the github repo containing the webapp into a temporal directory on the server
-- Copies the webapp from the temporal directory to the **html directory where apache can serve the content**
-- Removes the cloned repo from the server
-- Restarts apache
 
-The last 5 lines of code ensures that our webapp is present in the master node. This is very important as we will be using the copy module with remote source in the playbook to deploy the webapp.
 
 ## Setting Up WebApp Host Nodes
 - Create a second security group named **`Hostnode-SG`**. Open `HTTP port 80` to everywhere and `SSH Port 22` to the **`security group of the masternode`**
@@ -131,7 +104,7 @@ sudo yum install nano -y
 
 - it does not install git
 - does not update th host nodes nor install apache
-- does not clone and copy the webapp
+- does not clone and move the webapp to the Apache directory
 - does not install ansible
 
 **The above tasks will be done by ansible on the host nodes.**
@@ -209,6 +182,11 @@ sudo yum install nano -y
   hosts: webservers
   become: yes
 
+  vars:
+    git_repo: "https://github.com/Sensini7/Host-a-Secure-Static-Website-On-S3-Bucket-With-Cloudfront-And-Route53.git"
+    git_branch: "main"
+    html_file: "index.html"
+
   tasks:
   - name: Update target servers
     yum:
@@ -236,17 +214,16 @@ sudo yum install nano -y
       name: git
       state: present
 
-  - name: Clone git repository
+  - name: Clone repository
     git:
-      repo: https://github.com/Sensini7/Host-a-Secure-Static-Website-On-S3-Bucket-With-Cloudfront-And-Route53.git
-      dest: /tmp/staticwebsite
-      
+        repo: "{{ git_repo }}"
+        dest: "/tmp/repo"
+        version: "{{ git_branch }}"
+        clone: yes
+        force: yes
 
-  - name: Copy static website 
-    copy:
-      src: /tmp/staticwebsite/index.html
-      dest: /var/www/html/index.html
-      remote_src: yes 
+  - name: Move HTML file to Apache directory
+    command: mv "/tmp/repo/{{ html_file }}" "/var/www/html/{{ html_file }}"
 
   - name: Delete cloned repository
     file:
@@ -258,25 +235,50 @@ sudo yum install nano -y
       name: httpd
       state: restarted
 
+
 ```
-- save and exit the file
-- The playbook does the following:
-- Goes to all servers in the hosts group `webservers`
-- updates all the servers
-- installs apache on all target servers to serve the webapp
-- starts apache on these servers
-- enables apache at boot time
-- installs git
-- clones the github repo containing the webapp into a temporal directory in a folder named `staticwebsite`
-- Copies the webapp from the temporal directory into the html directory of apache which serves the webapp. **`PS: WE used the copy module in this section of the playbook. Just by using the copy module, the content has to be found on the ansible controller which is why we bootstraped the ansible master with a script that copies the website to the ansible master. with a remote source set to yes, this tells ansible to copy the webapp from the controller node to the host nodes.`**
-- The next task deletes the cloned repository on all target nodes
-- And finally restarts apache
+
+This is a playbook that **`installs, starts, and enables Apache web server on target webservers. It then installs Git, clones a repository from a specified URL, and moves an HTML file from the cloned repository to the Apache directory. Finally, it restarts the Apache service.`**
+
+**Here is a breakdown of each task:**
+
+- `name:` This is just a name for the playbook to help identify what it does.
+
+- `hosts:` This specifies which group of servers the playbook will run on. In this case, it is the webservers group.
+
+- `become:` This tells Ansible to run the playbook with sudo privileges.
+
+- `vars:` This section defines variables that will be used throughout the playbook. In this case, there are three variables defined: `git_repo,` `git_branch,` and    `html_file.` These variables are used later in the playbook to specify the GitHub repository to clone, the branch to check out, and the HTML file to move to the         Apache  directory.
+
+- `tasks:` This is where the main part of the playbook starts. It contains a list of tasks that will be executed in order on the target servers.
+
+1. Update target servers: Uses the yum module to update all packages on the target servers, but only when the OS is CentOS 7.
+
+2. Install Apache: Uses the yum module to install the Apache web server on the target servers.
+ 
+3. Start Apache: Uses the service module to start the Apache web server.
+ 
+4. Enable Apache at boot time: Uses the service module to enable the Apache web server to start at boot time.
+ 
+5. Install Git: Uses the yum module to install Git on the target servers.
+ 
+6. Clone repository: Uses the git module to clone the specified Git repository to the /tmp/repo directory on the target servers, checking out the specified branch and    forcing any existing changes to be overwritten.
+ 
+7. Move HTML file to Apache directory: Uses the command module to move the index.html file from the cloned repository to the Apache web server's document root            directory (/var/www/html/).
+ 
+8. Delete cloned repository: Uses the file module to delete the cloned repository from the target servers.
+ 
+9. Restart Apache: Uses the service module to restart the Apache web server.
+
+- Run the playbook with the following command `ansible-playbook webservers-playbook.yml
+`
+- With a success, you should get something similar to the output below
+
+- In your case All tasks should indicate`CHANGED` and in `yellow`. I have a couple of `OK` tasks marked in green because i am running this playbook for the second time   and ansible recognizes that those tasks have already been performed.
 
 
-- Run the playbook with the following command `ansible-playbook webservers-playbook.yml`
-- With a success, you should get the following output
+![gitmoduleplaybookoutput](https://user-images.githubusercontent.com/99888333/226077211-0911167c-a64c-4067-82f1-0a06a4252e5b.png)
 
-![final playbook output](https://user-images.githubusercontent.com/99888333/224849638-2cd05e2a-e7d0-495e-a564-2663df264496.png)
 
 **Navigate to the EC2 console, copy the Public IPs of Node1 and Node2 and paste in the browser to view the newly deployed webapp on hostnodes.**
 
