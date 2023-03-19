@@ -227,7 +227,7 @@ sudo yum install nano -y
 
   - name: Delete cloned repository
     file:
-      path: /tmp/staticwebsite
+      path: /tmp/repo
       state: absent
 
   - name: Restart Apache
