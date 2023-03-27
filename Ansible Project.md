@@ -113,12 +113,21 @@ sudo yum install nano -y
 
 ## Changing Hostnames
 
-1. Open three CLI terminals and login to each of the servers as the ansible user on each terminal. i.e, one terminal for the master node,one for Node1 and the last for   Node2 
-2. use the following command to login. **`ssh ansible@public-IP`**. Replace public-ip with the corresponding public IP of each server in each case.
+1. Open the CLI terminal and login to the ansible master server 
+
+2. use the following command to login. **`ssh ansible@public-IP`**. Replace public-ip with the corresponding public IP of the ansible master server.
+
 3. On the master node, use the command **`sudo nano /etc/hostname`** to edit its hostname. When the nano editor opens the hostname file, change its hostname to `ansible-master` hit **ctrl+x,yand enter** to save and exit the nano editor
-4. Reboot the server with the `sudo reboot1 command to pickup the new changes.
+
+4. Reboot the server with the `sudo reboot command to pickup the new changes.
+
 5. Re-SSH into the master node to view the new hostname.
-6. Repeat steps `3,4 and 5`  on nodes 1 and 2 changing their hostnames to Node1 And Node2 respectively.
+
+6. From the master node, ssh into node1 using the following command **ssh ansible@Private_IP** of node1. Insert the ansible node1 user password "ansible" to login. 
+
+7. Repeat steps **3, 4 and 5** to change the hostname of Node1
+
+8. Repeat steps `6,3,4 and 5`  on node2  changing its hostnames to   Node2 respectively.
 
 **master node hostname**
 
